@@ -15,7 +15,7 @@
 <section class="panel"><div class="panel-title"><h2>02 / Respostas e objetivos</h2><button class="btn small" id="addResponse">+ Adicionar resposta</button></div><p class="panel-desc">Informe até 3 respostas. Para maximizar ou minimizar, use limites “ruim” e “bom” para orientar a otimização. Para alvo, informe alvo e tolerância. Pesos definem prioridade relativa.</p><div id="responseList"></div></section>
 <section class="panel"><div class="panel-title"><h2>03 / Planejamento experimental</h2><div class="actions"><button class="btn primary" id="makeDesign">Gerar matriz</button><button class="btn" id="csvOut">Exportar CSV</button><button class="btn" id="csvIn">Importar resultados CSV</button><input id="csvFile" type="file" accept=".csv,text/csv" hidden/></div></div><div class="grid2"><div class="field"><label for="designType">Tipo de planejamento</label><select id="designType"><option value="ccd">Composto central (modelo quadrático)</option><option value="factorial">Fatorial completo + centros (interações)</option></select></div><div class="field"><label for="centers">Número de pontos centrais</label><select id="centers"><option value="2" selected>2 repetições</option><option value="3">3 repetições</option><option value="5">5 repetições</option><option value="6">6 repetições</option></select></div></div><div id="designSummary" class="info">Defina os fatores e gere o planejamento. Ao alterar fatores ou respostas, gere novamente a matriz.</div><div id="designTable" class="tablewrap hidden"></div></section>
 <section class="panel"><div class="panel-title"><h2>04 / Modelagem e diagnóstico</h2><button class="btn primary" id="fitBtn">Calcular modelos</button></div><div id="fitOutput"><p class="panel-desc">Preencha os resultados experimentais na tabela acima para ajustar um modelo para cada resposta. Os dados incompletos serão ignorados individualmente por resposta.</p></div><div id="diagnostics" class="hidden"></div></section>
-<section class="panel"><div class="panel-title"><h2>05 / Otimização e próximos ensaios</h2><button class="btn primary" id="optBtn">Calcular condição candidata</button></div><div id="optOutput"><p class="panel-desc">Depois do ajuste, o sistema procura uma combinação que equilibre os objetivos definidos. A otimização é preditiva e precisa de confirmação experimental.</p></div><div id="plotWrap" class="vis hidden" style="margin-top:15px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>Mapa de desejabilidade</strong><span class="meta">Para dois fatores: demais fatores fixados na condição candidata</span></div><canvas id="surfacePlot" height="290"></canvas></div><div id="threeD" class="vis hidden" style="margin-top:15px"><strong>Superfície 3D de resposta prevista (dois fatores)</strong><div class="grid2" style="margin-top:12px"><div class="field"><label>Resposta visualizada</label><select id="surfaceResponse"></select></div><div class="field"><label>Rotação</label><input id="rotation" type="range" min="-80" max="80" value="-35"/></div></div><canvas id="surface3D" height="340"></canvas><p class="meta">Projeção tridimensional ilustrativa do modelo ajustado; não representa pontos medidos ou validação.</p></div><div id="confirmPanel" class="factor-card hidden" style="margin-top:16px"></div></section>
+<section class="panel"><div class="panel-title"><h2>05 / Otimização e próximos ensaios</h2><button class="btn primary" id="optBtn">Calcular condição candidata</button></div><div id="optOutput"><p class="panel-desc">Depois do ajuste, o sistema procura uma combinação que equilibre os objetivos definidos. A otimização é preditiva e precisa de confirmação experimental.</p></div><div id="plotWrap" class="vis hidden" style="margin-top:15px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>Mapa de desejabilidade</strong><span class="meta">Para dois fatores: demais fatores fixados na condição candidata</span></div><canvas id="surfacePlot" height="290"></canvas></div><div id="threeD" class="vis hidden" style="margin-top:15px"><strong>Superfície 3D de resposta prevista (dois fatores)</strong><div class="grid2" style="margin-top:12px"><div class="field"><label>Resposta visualizada</label><select id="surfaceResponse"></select></div><div class="field"><label>Rotação horizontal</label><input id="rotation" type="range" min="-180" max="180" value="-45"/></div></div><div class="grid2" style="margin:10px 0 4px"><div class="field"><label>Inclinação</label><input id="elevation3D" type="range" min="12" max="76" value="32"/></div><div class="field"><label>Zoom</label><input id="zoom3D" type="range" min="70" max="160" value="100"/></div></div><canvas id="surface3D" height="430" style="width:100%;max-width:100%;height:430px;touch-action:none;cursor:grab;border-radius:10px;background:#f8fbfc" aria-label="Gráfico 3D interativo da resposta prevista"></canvas><p class="meta">Arraste com o dedo ou mouse para girar; ajuste zoom e inclinação pelos controles. Superfície calculada pelo modelo, não por medidas em cada ponto. Eixos e cores representam valores previstos; confirmação experimental necessária.</p></div><div id="confirmPanel" class="factor-card hidden" style="margin-top:16px"></div></section>
 <section class="panel"><div class="panel-title"><h2>06 / Relatório técnico</h2><button class="btn primary" id="reportBtn">Gerar relatório para impressão / PDF</button></div><p class="panel-desc">Resumo do planejamento, resultados, indicadores estatísticos, interpretação e ensaios de confirmação. Para PDF, utilize a opção de impressão do navegador.</p></section>
 <div class="footer">Versão demonstrativa para planejamento e aprendizagem. Modelos por mínimos quadrados; indicador de validação cruzada leave-one-out (Q²), quando calculável. Nenhum dado é transmitido: o estado é guardado apenas no armazenamento deste navegador. Faça backup do projeto JSON. Não utilize previsões para alterar processos regulados sem protocolo, controle de mudanças e aprovação técnica.</div>
 </main></div>
@@ -108,7 +108,94 @@ function renderDiagnostics(){const node=$('#diagnostics');node.classList.remove(
 function renderConfirm(){if(!optimum)return;const node=$('#confirmPanel');node.classList.remove('hidden');const rows=models.map(m=>{const ci=modelInterval(m,optimum.z);return `<tr><td>${safe(state.responses[m.j].name)}</td><td>${fmt(ci.pred,4)}</td><td>${fmt(ci.clow,4)} a ${fmt(ci.chigh,4)}</td><td>${fmt(ci.low,4)} a ${fmt(ci.high,4)}</td></tr>`;}).join('');node.innerHTML=`<h3>Ensaio de confirmação sugerido</h3><p class="panel-desc">Executar ao menos 3 repetições independentes na condição candidata, se tecnicamente viável, seguindo protocolo próprio e comparando com uma condição de referência. Os intervalos abaixo são aproximações paramétricas de 95% condicionadas ao modelo e aos seus pressupostos.</p><div class="tablewrap"><table><thead><tr><th>Resposta</th><th>Estimativa</th><th>IC 95% da média</th><th>IP 95% individual</th></tr></thead><tbody>${rows}</tbody></table></div><p class="meta">IC: incerteza da resposta média prevista; IP: intervalo para uma nova observação individual. Esses intervalos não incorporam incerteza de seleção do ótimo, alterações de escala, erros de medição ou violações das hipóteses. Não constituem limites de especificação.</p><div class="grid2" style="margin-top:12px">${state.responses.map((r,j)=>`<div class="field"><label>Confirmação ${safe(r.name)} (média observada)</label><input type="number" step="any" data-confirm="${j}" placeholder="Média das repetições" value="${state.confirm?.[j]??''}"/></div>`).join('')}</div><div id="confirmDifference" class="info">Preencha as médias observadas para comparar com o modelo.</div>`;node.querySelectorAll('[data-confirm]').forEach(el=>el.addEventListener('change',()=>{state.confirm??={};if(el.value==='')delete state.confirm[+el.dataset.confirm];else state.confirm[+el.dataset.confirm]=Number(el.value);persist();renderConfirmationDifference();}));renderConfirmationDifference();}
 function renderConfirmationDifference(){const node=$('#confirmDifference');if(!node||!optimum)return;const rows=models.map(m=>{const obs=state.confirm?.[m.j];if(!Number.isFinite(obs))return '';const ci=modelInterval(m,optimum.z),delta=obs-ci.pred,inside=obs>=ci.low&&obs<=ci.high;return `<div>${safe(state.responses[m.j].name)}: observado ${fmt(obs,4)}; previsto ${fmt(ci.pred,4)}; diferença ${fmt(delta,4)}; ${inside?'dentro':'fora'} do IP individual aproximado. <strong>A média de repetições não deve ser formalmente julgada pelo IP individual.</strong></div>`;}).filter(Boolean);node.innerHTML=rows.length?rows.join(''):'Preencha as médias observadas para comparar com o modelo.';}
 function render3D(){const node=$('#threeD');if(!optimum||state.factors.length!==2||state.factors.some(f=>f.type==='category')){node.classList.add('hidden');return;}node.classList.remove('hidden');$('#surfaceResponse').innerHTML=state.responses.map((r,j)=>`<option value="${j}">${safe(r.name)}</option>`).join('');draw3D();}
-function draw3D(){if(!models.length||!optimum||$('#threeD').classList.contains('hidden'))return;const c=$('#surface3D'),ctx=c.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2),W=Math.max(290,c.getBoundingClientRect().width),H=340;c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const m=models[Number($('#surfaceResponse').value)]||models[0],a=state.type==='ccd'?Math.pow(2**2,.25):1,N=25;const vals=[];for(let i=0;i<=N;i++)for(let j=0;j<=N;j++)vals.push(predict(m,[-a+2*a*i/N,-a+2*a*j/N]));const vmin=Math.min(...vals),span=Math.max(...vals)-vmin||1,rot=Number($('#rotation').value)*Math.PI/180;function proj(i,j){const x=(i/N-.5)*2,y=(j/N-.5)*2,v=predict(m,[-a+2*a*i/N,-a+2*a*j/N]),h=(v-vmin)/span;const xx=x*Math.cos(rot)-y*Math.sin(rot),yy=x*Math.sin(rot)+y*Math.cos(rot);return [W/2+xx*W*.22,H*.68+yy*H*.2-h*H*.40,h];}for(let pass=0;pass<2;pass++){for(let i=0;i<=N;i++){ctx.beginPath();for(let j=0;j<=N;j++){const p=pass?proj(j,i):proj(i,j);if(!j)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}ctx.strokeStyle=pass?'#1a8a80aa':'#668ea2aa';ctx.lineWidth=1.2;ctx.stroke();}}ctx.fillStyle='#435c6a';ctx.font='12px system-ui';ctx.fillText(state.factors[0].name+' × '+state.factors[1].name,15,H-10);ctx.fillText('Máximo modelo: '+fmt(Math.max(...vals),3),15,20);ctx.fillText('Mínimo modelo: '+fmt(vmin,3),15,38);}
+function draw3D(){
+  if(!models.length||!optimum||$('#threeD').classList.contains('hidden'))return;
+  const canvas=$('#surface3D'),ctx=canvas.getContext('2d');
+  const dpr=Math.min(window.devicePixelRatio||1,2),W=Math.max(300,canvas.getBoundingClientRect().width),H=430;
+  canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const m=models[Number($('#surfaceResponse').value)]||models[0],a=state.type==='ccd'?Math.pow(2**2,.25):1,N=32;
+  const values=[],nodes=[];
+  for(let i=0;i<=N;i++){nodes[i]=[];for(let j=0;j<=N;j++){
+    const z=[-a+2*a*i/N,-a+2*a*j/N],value=predict(m,z);
+    values.push(value);nodes[i][j]={x:-1+2*i/N,y:-1+2*j/N,value};
+  }}
+  const min=Math.min(...values),max=Math.max(...values),span=Math.max(max-min,1e-12);
+  const az=Number($('#rotation').value)*Math.PI/180,el=Number($('#elevation3D').value)*Math.PI/180;
+  const zoom=Number($('#zoom3D').value)/100;
+  const cos=Math.cos(az),sin=Math.sin(az),sine=Math.sin(el),cose=Math.cos(el);
+  function camera(x,y,z){const h=x*cos-y*sin,d=x*sin+y*cos;return {x:h,y:d*sine-z*1.65*cose,depth:d*cose+z*1.65*sine};}
+  function get3D(n){return camera(n.x,n.y,(n.value-min)/span);}
+  const bounds=[[-1,-1,0],[1,-1,0],[-1,1,0],[1,1,0],[-1,-1,1],[1,-1,1],[-1,1,1],[1,1,1]].map(q=>camera(...q));
+  const xmin=Math.min(...bounds.map(v=>v.x)),xmax=Math.max(...bounds.map(v=>v.x));
+  const ymin=Math.min(...bounds.map(v=>v.y)),ymax=Math.max(...bounds.map(v=>v.y));
+  const marginX=W<450?54:80,marginY=55;
+  const scale=Math.min((W-2*marginX)/(xmax-xmin),(H-2*marginY)/(ymax-ymin))*zoom;
+  const cx=(xmin+xmax)/2,cy=(ymin+ymax)/2;
+  function pos(p){return {x:W/2+(p.x-cx)*scale,y:H/2+(p.y-cy)*scale};}
+  function at(x,y,z){return pos(camera(x,y,z));}
+  const polys=[];
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const corners=[nodes[i][j],nodes[i+1][j],nodes[i+1][j+1],nodes[i][j+1]];
+    const verts=corners.map(n=>get3D(n));
+    const avg=verts.reduce((s,v)=>s+v.depth,0)/4;
+    const val=corners.reduce((s,n)=>s+n.value,0)/4;
+    polys.push({verts,avg,ratio:Math.max(0,Math.min(1,(val-min)/span))});
+  }
+  // Painter's algorithm: farthest polygons first for a consistent solid surface.
+  polys.sort((u,v)=>u.avg-v.avg);
+  function color(t){const stops=[[42,105,187],[41,178,181],[113,207,145],[239,199,91]];
+    const q=Math.min(2.999,Math.max(0,t*3)),i=Math.floor(q),f=q-i;
+    return 'rgb('+stops[i].map((v,k)=>Math.round(v+(stops[i+1][k]-v)*f)).join(',')+')';}
+  for(const poly of polys){
+    ctx.beginPath();poly.verts.forEach((v,i)=>{const p=pos(v);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});
+    ctx.closePath();ctx.fillStyle=color(poly.ratio);ctx.fill();
+    ctx.strokeStyle='rgba(18,76,95,.19)';ctx.lineWidth=.65;ctx.stroke();
+  }
+  function line(p,q,stroke='#37576b',width=1.4){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}
+  function dot(p,col='#243d54'){ctx.beginPath();ctx.arc(p.x,p.y,3.2,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();}
+  const origin=at(-1,-1,0),xEnd=at(1,-1,0),yEnd=at(-1,1,0),zEnd=at(-1,-1,1);
+  line(origin,xEnd);line(origin,yEnd);line(origin,zEnd);
+  ctx.font=(W<450?'10':'11')+'px system-ui';ctx.fillStyle='#2c4658';
+  ctx.textAlign='center';ctx.textBaseline='top';
+  const factorValue=(idx,t)=>{const f=state.factors[idx];return fmt(f.min+(f.max-f.min)*t,3);};
+  for(let k=0;k<=4;k++){
+    const t=k/4,p=at(-1+2*t,-1,0),q=at(-1,-1+2*t,0),v=at(-1,-1,t);
+    line(p,{x:p.x,y:p.y+5},'#537183',.9);ctx.fillText(factorValue(0,t),p.x,p.y+7);
+    line(q,{x:q.x-4,y:q.y+3},'#537183',.9);ctx.fillText(factorValue(1,t),q.x,q.y+6);
+    line(v,{x:v.x-5,y:v.y},'#537183',.9);ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(fmt(min+span*t,2),v.x-8,v.y);ctx.textAlign='center';ctx.textBaseline='top';
+  }
+  ctx.font='600 11px system-ui';ctx.fillStyle='#19394e';
+  const xLab=at(0,-1,0),yLab=at(-1,0,0);
+  ctx.fillText(state.factors[0].name+' ('+(state.factors[0].unit||'')+')',Math.max(62,Math.min(W-62,xLab.x)),Math.min(H-20,xLab.y+29));
+  ctx.fillText(state.factors[1].name+' ('+(state.factors[1].unit||'')+')',Math.max(62,Math.min(W-62,yLab.x)),Math.min(H-20,yLab.y+29));
+  ctx.save();ctx.translate(Math.max(11,zEnd.x-30),Math.max(20,zEnd.y-8));ctx.rotate(-Math.PI/2);
+  ctx.fillText(state.responses[m.j].name,0,0);ctx.restore();
+  // Candidate from the multiresponse optimizer, if within the 2-factor domain.
+  if(optimum&&optimum.z.length===2){
+    const z=optimum.z,pr=predict(m,z),p=pos(camera(z[0]/a,z[1]/a,(pr-min)/span));
+    ctx.beginPath();ctx.arc(p.x,p.y,5.5,0,Math.PI*2);ctx.fillStyle='#b42342';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke();
+    ctx.fillStyle='#a2223b';ctx.font='600 10px system-ui';ctx.fillText('Candidato',p.x,p.y+9);
+  }
+  // Value scale, displayed separately from the surface.
+  const lx=Math.max(12,W-145),ly=12,lw=125;
+  const grad=ctx.createLinearGradient(lx,0,lx+lw,0);
+  for(let i=0;i<=20;i++)grad.addColorStop(i/20,color(i/20));
+  ctx.fillStyle=grad;ctx.fillRect(lx,ly,lw,9);
+  ctx.fillStyle='#526b7b';ctx.font='10px system-ui';ctx.textBaseline='top';ctx.textAlign='left';
+  ctx.fillText(fmt(min,2),lx,ly+13);ctx.textAlign='right';ctx.fillText(fmt(max,2),lx+lw,ly+13);
+}
+let dragging3D=false,lastPointer3D=null;
+$('#surface3D').addEventListener('pointerdown',e=>{dragging3D=true;lastPointer3D=[e.clientX,e.clientY];e.currentTarget.setPointerCapture(e.pointerId);});
+$('#surface3D').addEventListener('pointermove',e=>{if(!dragging3D||!lastPointer3D)return;const dx=e.clientX-lastPointer3D[0],dy=e.clientY-lastPointer3D[1];lastPointer3D=[e.clientX,e.clientY];
+  $('#rotation').value=Math.max(-180,Math.min(180,Number($('#rotation').value)+dx*.65));
+  $('#elevation3D').value=Math.max(12,Math.min(76,Number($('#elevation3D').value)-dy*.35));
+  draw3D();
+});
+$('#surface3D').addEventListener('pointerup',()=>{dragging3D=false;lastPointer3D=null;});
+$('#surface3D').addEventListener('pointercancel',()=>{dragging3D=false;lastPointer3D=null;});
+$('#elevation3D').addEventListener('input',draw3D);
+$('#zoom3D').addEventListener('input',draw3D);
 function report(){if(!models.length)fitAll();let html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório técnico LabDOE</title><style>body{font:13px Arial;max-width:1000px;margin:25px auto;line-height:1.5;color:#172a34}h1,h2{color:#185c60}table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #ccd8d9;padding:7px;text-align:left}th{background:#e9f4f2}.warning{background:#fff6df;padding:12px;border-left:4px solid #ca942f}@media print{body{margin:12mm}h2{break-before:auto}tr{break-inside:avoid}}</style></head><body><h1>LabDOE — Relatório técnico de experimentos</h1><p>Gerado em ${new Date().toLocaleString('pt-BR')}. Ferramenta educacional; análises condicionadas aos pressupostos dos modelos.</p><h2>Planejamento</h2><p>${safe(state.type==='ccd'?'Composto central':'Fatorial completo')} • ${state.runs.length} ensaios • ${state.factors.length} fatores • ${state.responses.length} respostas</p><table><tr><th>Fator</th><th>Tipo</th><th>Limites / Categorias</th></tr>${state.factors.map(f=>`<tr><td>${safe(f.name)}</td><td>${f.type==='category'?'Categórico':'Numérico'}</td><td>${f.type==='category'?safe(f.low)+' / '+safe(f.high):fmt(f.min)+' a '+fmt(f.max)+' '+safe(f.unit)}</td></tr>`).join('')}</table><h2>Resultados e diagnósticos</h2>${models.map(m=>{const a=stats(m);return `<h3>${safe(state.responses[m.j].name)}</h3><p>R² ${fmt(m.r2,4)}, R² ajustado ${fmt(m.adj,4)}, Q² ${fmt(m.q2,4)}, RMSE ${fmt(m.rmse,4)}.</p><p>ANOVA: F(${a.dfm}, ${a.df}) = ${fmt(a.ff,4)}, p = ${fmt(a.p,6)}. Falta de ajuste: ${Number.isFinite(a.lop)?'p = '+fmt(a.lop,6):'não estimável'}; graus de liberdade de erro puro ${a.pe.df}.</p><table><tr><th>Termo</th><th>Coeficiente</th></tr>${names().map((n,i)=>`<tr><td>${safe(n)}</td><td>${fmt(m.coef[i],6)}</td></tr>`).join('')}</table>`;}).join('')}<h2>Condição candidata e ensaio confirmatório</h2>${optimum?`<p>Desejabilidade estimada: ${fmt(optimum.s,5)}</p><table><tr><th>Fator</th><th>Condição prevista</th></tr>${decode(optimum.z).map((v,i)=>`<tr><td>${safe(state.factors[i].name)}</td><td>${typeof v==='number'?fmt(v,5):safe(v)}</td></tr>`).join('')}</table><table><tr><th>Resposta</th><th>Estimativa</th><th>IC 95%</th><th>IP 95%</th><th>Confirmação observada</th></tr>${models.map(m=>{const ci=modelInterval(m,optimum.z);return `<tr><td>${safe(state.responses[m.j].name)}</td><td>${fmt(ci.pred,4)}</td><td>${fmt(ci.clow,4)} a ${fmt(ci.chigh,4)}</td><td>${fmt(ci.low,4)} a ${fmt(ci.high,4)}</td><td>${fmt(state.confirm?.[m.j],4)}</td></tr>`;}).join('')}</table>`:'<p>Otimização ainda não realizada.</p>'}<h2>Matriz de ensaios e valores</h2><table><tr><th>Ensaio</th>${state.factors.map(f=>`<th>${safe(f.name)}</th>`).join('')}${state.responses.map(r=>`<th>${safe(r.name)}</th>`).join('')}</tr>${state.runs.map(run=>`<tr><td>${run.id}</td>${decode(run.z).map(v=>`<td>${typeof v==='number'?fmt(v,5):safe(v)}</td>`).join('')}${run.values.map(v=>`<td>${fmt(v,5)}</td>`).join('')}</tr>`).join('')}</table><p class="warning">Estimativas são condicionais aos modelos e não demonstram causalidade, adequação regulatória, robustez ou segurança do processo. Verifique aleatorização, replicação, homogeneidade de variância, independência, incerteza de medição e confirmação experimental antes de qualquer decisão industrial.</p></body></html>`;const blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='LabDOE_relatorio_tecnico.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);alert('Relatório HTML baixado. Abra o relatório no navegador e utilize Imprimir → Salvar como PDF.');}
 for(const id of ['conF1','conF2','conLimit'])$('#'+id).addEventListener('change',()=>{const value=$('#conLimit').value.trim();state.constraint=value===''?null:{i:Number($('#conF1').value),j:Number($('#conF2').value),limit:Number(value)};if(state.constraint&&(state.constraint.i===state.constraint.j||state.factors.some((f,i)=>(i===state.constraint.i||i===state.constraint.j)&&f.type==='category'))){alert('A restrição deve usar dois fatores numéricos diferentes.');state.constraint=null;}markDirty();persist();renderConstraint();});
 $('#reportBtn').addEventListener('click',()=>{try{report();}catch(e){alert(e.message);}});
