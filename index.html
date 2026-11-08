@@ -85,8 +85,8 @@ function peroxideDemo(){
       run.values=observations[key].slice();}
   });
   persist();renderDesign();fitAll();optimize();
-  $('#designSummary').insertAdjacentHTML('beforeend','<div style="margin-top:8px"><strong>SIMULAÇÃO EDUCACIONAL:</strong> os 10 ensaios e todos os resultados são fictícios. Não são condições recomendadas para produção ou purificação de heparina.</div>');
-  window.scrollTo({top:0,behavior:'smooth'});
+  $('#designSummary').insertAdjacentHTML('beforeend','<div style="margin-top:8px"><strong>RESPOSTAS SIMULADAS JÁ PREENCHIDAS:</strong> confira as duas últimas colunas da matriz: Clarificação simulada (%) e Atividade relativa simulada (%). Os 10 resultados são fictícios para treinamento, não condições recomendadas para purificação de heparina.</div>');
+  $('#designTable').scrollIntoView({behavior:'smooth',block:'start'});
 }
 $('#peroxideDemoBtn').onclick=()=>{try{peroxideDemo();}catch(e){alert(e.message);}};
 
