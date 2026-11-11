@@ -11,6 +11,20 @@
 <header><div><div class="logo">Lab<b>DOE</b> <span style="font-size:11px;font-weight:500;color:#a5bdcc">/ Estúdio de experimentos</span></div><div class="muted-head">Planejamento • Análise estatística • Otimização multirresposta</div></div><span class="pill">Funciona localmente, sem enviar dados a servidores</span></header>
 <div class="layout"><aside class="sidebar"><div class="asidebox"><h3>Fluxo experimental</h3><div class="step"><div class="num">1</div><span><strong>Definir fatores</strong>Variáveis controláveis e seus limites</span></div><div class="step"><div class="num">2</div><span><strong>Definir respostas</strong>O que maximizar, minimizar ou atingir</span></div><div class="step"><div class="num">3</div><span><strong>Gerar ensaios</strong>Matriz fatorial ou composto central</span></div><div class="step"><div class="num">4</div><span><strong>Inserir resultados</strong>Medições de cada execução</span></div><div class="step"><div class="num">5</div><span><strong>Modelar e otimizar</strong>Qualidade do ajuste e condições candidatas</span></div><hr style="border:0;border-top:1px solid #e8edf1;margin:16px 0"/><div class="hint">O aplicativo não substitui avaliação técnica, segurança industrial, aprovação de protocolos, validação nem análise de riscos.</div></div></aside><main class="workspace">
 <div class="hero"><div><div class="eyebrow">Ferramenta educacional • Protótipo v2</div><h1>Planeje, meça e encontre oportunidades</h1><p>Monte uma matriz de experimentos, ajuste modelos e identifique condições candidatas de melhoria — sempre dentro das faixas estudadas.</p></div><div class="actions"><button class="btn" id="demoBtn">Carregar exemplo fictício</button><button class="btn primary" id="peroxideDemoBtn">Simulação H₂O₂ + temperatura (2 centros)</button><button class="btn" id="exportProject">Salvar projeto JSON</button><button class="btn" id="importProject">Abrir projeto JSON</button><input id="projectFile" type="file" accept=".json,application/json" hidden/></div></div>
+<nav id="labTabs" class="actions" style="margin:0 0 18px;gap:8px" aria-label="Áreas do LabDOE"><button class="btn primary" id="tabDOE" type="button">Planejar experimentos (DOE)</button><button class="btn" id="tabCSV" type="button">Analisar dados CSV</button></nav>
+<section class="panel hidden" id="csvWorkspace">
+  <div class="panel-title"><h2>Análise automática de dados experimentais e históricos</h2><span class="tag">Nova aba</span></div>
+  <p class="panel-desc">Importe CSV com uma coluna por variável e uma linha por observação. Defina o significado, unidade e papel de cada coluna. O LabDOE ajusta regressões multivariáveis, calcula diagnósticos e compara as condições observadas. Os dados ficam neste navegador, sem envio a servidores.</p>
+  <div class="actions" style="margin:0 0 15px"><button class="btn primary" id="csvChoose" type="button">Importar minha tabela CSV</button><input id="csvAnalysisFile" type="file" accept=".csv,text/csv" hidden/><button class="btn" id="csvSample" type="button">Carregar exemplo didático</button><button class="btn" id="csvTemplate" type="button">Baixar CSV modelo</button><button class="btn" id="csvDictionary" type="button">Exportar dicionário CSV</button></div>
+  <div id="csvNotice" class="info">Comece enviando sua tabela, ou carregue o exemplo didático. Aceita separadores ponto e vírgula ou vírgula e valores decimais brasileiros com vírgula (quando o delimitador for ponto e vírgula).</div>
+  <div id="csvConfig" class="hidden">
+    <div class="panel-title" style="margin-top:20px"><h3>1. Dicionário de variáveis</h3></div>
+    <p class="panel-desc">Classifique as colunas como X (fator), Y (resposta), identificador ou ignorar. Preencha as descrições e unidades para que o relatório tenha significado técnico. Colunas com texto podem ser ignoradas; esta versão modela somente dados numéricos.</p>
+    <div id="csvVariables" class="tablewrap"></div>
+    <div class="actions" style="margin:14px 0"><button class="btn primary" id="csvAnalyze" type="button">Analisar estatisticamente</button><button class="btn" id="csvExportReport" type="button">Exportar relatório HTML</button></div>
+    <div id="csvSummary"></div><div id="csvResults"></div>
+  </div>
+</section>
 <section class="panel" id="setup"><div class="panel-title"><h2>01 / Variáveis de entrada (fatores)</h2><div class="actions"><button class="btn small" id="addFactor">+ Adicionar fator</button></div></div><p class="panel-desc">Escolha de 2 a 4 fatores numéricos ou categóricos (duas categorias). O composto central requer somente fatores numéricos; fatores categóricos são aceitos em planejamentos fatoriais.</p><div id="factorList"></div><div class="factor-card"><div class="factor-top"><strong>Restrições operacionais</strong></div><p class="panel-desc">Opcional: limite a soma de dois fatores numéricos (com unidades compatíveis). O sistema filtra ensaios inviáveis e restringe a otimização; avalie se o planejamento continua estimável.</p><div class="grid3"><div class="field"><label>Primeiro fator</label><select id="conF1"></select></div><div class="field"><label>Segundo fator</label><select id="conF2"></select></div><div class="field"><label>Soma máxima (desative deixando vazio)</label><input id="conLimit" type="number" step="any" placeholder="Sem restrição"/></div></div></div></section>
 <section class="panel"><div class="panel-title"><h2>02 / Respostas e objetivos</h2><button class="btn small" id="addResponse">+ Adicionar resposta</button></div><p class="panel-desc">Informe até 3 respostas. Para maximizar ou minimizar, use limites “ruim” e “bom” para orientar a otimização. Para alvo, informe alvo e tolerância. Pesos definem prioridade relativa.</p><div id="responseList"></div></section>
 <section class="panel"><div class="panel-title"><h2>03 / Planejamento experimental</h2><div class="actions"><button class="btn primary" id="makeDesign">Gerar matriz</button><button class="btn" id="csvOut">Exportar CSV</button><button class="btn" id="csvIn">Importar resultados CSV</button><input id="csvFile" type="file" accept=".csv,text/csv" hidden/></div></div><div class="grid2"><div class="field"><label for="designType">Tipo de planejamento</label><select id="designType"><option value="ccd">Composto central (modelo quadrático)</option><option value="factorial">Fatorial completo + centros (interações)</option></select></div><div class="field"><label for="centers">Número de pontos centrais</label><select id="centers"><option value="2" selected>2 repetições</option><option value="3">3 repetições</option><option value="5">5 repetições</option><option value="6">6 repetições</option></select></div></div><div id="designSummary" class="info">Defina os fatores e gere o planejamento. Ao alterar fatores ou respostas, gere novamente a matriz.</div><div id="designTable" class="tablewrap hidden"></div></section>
@@ -201,6 +215,150 @@ for(const id of ['conF1','conF2','conLimit'])$('#'+id).addEventListener('change'
 $('#reportBtn').addEventListener('click',()=>{try{report();}catch(e){alert(e.message);}});
 $('#surfaceResponse').addEventListener('change',draw3D);
 $('#rotation').addEventListener('input',draw3D);
+
+
+/* === Análise de dados CSV independentes do planejamento DOE === */
+const csvMode={headers:[],rows:[],meta:[],fileName:'',analysis:null};
+function csvTabs(mode){
+  const isCsv=mode==='csv';
+  document.querySelectorAll('.workspace > section.panel').forEach(p=>{if(p.id==='csvWorkspace')p.classList.toggle('hidden',!isCsv);else p.classList.toggle('hidden',isCsv);});
+  $('#tabCSV').classList.toggle('primary',isCsv);$('#tabDOE').classList.toggle('primary',!isCsv);
+  document.querySelector('.hero').classList.toggle('hidden',isCsv);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('#tabDOE').onclick=()=>csvTabs('doe');$('#tabCSV').onclick=()=>csvTabs('csv');
+$('#csvChoose').onclick=()=>$('#csvAnalysisFile').click();
+function csvNumber(cell){
+  let v=String(cell??'').trim().replace(/\s/g,'');
+  if(!v||['NA','N/A','null','-','—'].includes(v))return NaN;
+  if(v.includes(',')&&v.includes('.')){v=v.lastIndexOf(',')>v.lastIndexOf('.')?v.replace(/\./g,'').replace(',','.'):v.replace(/,/g,'');}
+  else if(v.includes(','))v=v.replace(',','.');
+  if(!/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(v))return NaN;
+  return Number(v);
+}
+function csvRead(text,fileName){
+  const data=parseCsv(text),headers=(data.shift()||[]).map((x,i)=>x.trim()||'Coluna '+(i+1));
+  if(headers.length<2||headers.length>80)throw Error('O arquivo deve ter entre 2 e 80 colunas.');
+  if(new Set(headers).size!==headers.length)throw Error('Existem nomes de colunas duplicados. Ajuste os cabeçalhos.');
+  const rows=data.filter(r=>r.some(v=>String(v).trim()));
+  if(rows.length<4)throw Error('São necessárias ao menos 4 linhas de dados.');
+  if(rows.some(r=>r.length!==headers.length))throw Error('Há linhas com quantidade diferente de colunas. Verifique separadores, aspas e células vazias.');
+  if(rows.length>5000)throw Error('Para desempenho no navegador, importe até 5.000 linhas por vez.');
+  csvMode.headers=headers;csvMode.rows=rows;csvMode.fileName=fileName;csvMode.analysis=null;
+  const numeric=headers.map((_,i)=>rows.filter(r=>Number.isFinite(csvNumber(r[i]))).length);
+  csvMode.meta=headers.map((name,i)=>({name,role:/^(y\d+|resposta|resultado|rend|atividade|qualidade)/i.test(name)?'y':/^(id|lote|ensaio|data|ordem)/i.test(name)?'id':numeric[i]>=rows.length*.8?'x':'skip',desc:'',unit:'',goal:'max'}));
+  if(!csvMode.meta.some(m=>m.role==='y')){let last=csvMode.meta.findLastIndex(m=>m.role==='x');if(last>=0)csvMode.meta[last].role='y';}
+  $('#csvConfig').classList.remove('hidden');
+  $('#csvNotice').className='info';$('#csvNotice').textContent='Arquivo: '+fileName+' — '+rows.length+' linhas e '+headers.length+' colunas. Revise a classificação e a descrição de cada variável antes da análise.';
+  csvRenderConfig();
+}
+$('#csvAnalysisFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{csvRead(await f.text(),f.name);}catch(ex){$('#csvNotice').className='warn';$('#csvNotice').textContent=ex.message;}e.target.value='';};
+function csvRenderConfig(){
+  const counts=csvMode.headers.map((_,i)=>csvMode.rows.filter(r=>Number.isFinite(csvNumber(r[i]))).length);
+  $('#csvVariables').innerHTML='<table style="min-width:950px"><thead><tr><th>Coluna no CSV</th><th>Papel</th><th>O que significa?</th><th>Unidade</th><th>Objetivo Y</th><th>Numéricos</th></tr></thead><tbody>'+
+    csvMode.meta.map((m,i)=>'<tr><td><strong>'+safe(m.name)+'</strong></td><td><select aria-label="Papel de '+safe(m.name)+'" data-col="'+i+'" data-prop="role"><option value="x" '+(m.role==='x'?'selected':'')+'>X · entrada</option><option value="y" '+(m.role==='y'?'selected':'')+'>Y · resposta</option><option value="id" '+(m.role==='id'?'selected':'')+'>Identificador</option><option value="skip" '+(m.role==='skip'?'selected':'')+'>Ignorar</option></select></td><td><input style="min-width:190px" placeholder="Ex.: temperatura medida no tanque" data-col="'+i+'" data-prop="desc" value="'+safe(m.desc)+'"></td><td><input style="width:78px" placeholder="°C" data-col="'+i+'" data-prop="unit" value="'+safe(m.unit)+'"></td><td><select data-col="'+i+'" data-prop="goal" '+(m.role!=='y'?'disabled':'')+'><option value="max" '+(m.goal==='max'?'selected':'')+'>Maximizar</option><option value="min" '+(m.goal==='min'?'selected':'')+'>Minimizar</option></select></td><td>'+counts[i]+'/'+csvMode.rows.length+'</td></tr>').join('')+'</tbody></table>';
+  $('#csvVariables').querySelectorAll('[data-col]').forEach(el=>el.addEventListener('change',()=>{const i=Number(el.dataset.col),key=el.dataset.prop;csvMode.meta[i][key]=el.value;if(key==='role')csvRenderConfig();csvMode.analysis=null;$('#csvResults').innerHTML='';$('#csvSummary').innerHTML='<div class="warn">Configuração alterada. Clique em Analisar estatisticamente para atualizar.</div>';}));
+  const sample=csvMode.rows.slice(0,5);
+  $('#csvSummary').innerHTML='<div class="info">Prévia: '+safe(csvMode.headers.join(' | '))+'<br>'+sample.map(row=>safe(row.join(' | '))).join('<br>')+'</div>';
+  $('#csvResults').innerHTML='';
+}
+function csvAverage(a){return a.reduce((s,v)=>s+v,0)/a.length;}
+function csvStd(a){const mu=csvAverage(a);return Math.sqrt(a.reduce((s,v)=>s+(v-mu)**2,0)/Math.max(1,a.length-1));}
+function csvCorr(a,b){if(a.length<3||csvStd(a)===0||csvStd(b)===0)return NaN;const aa=csvAverage(a),bb=csvAverage(b);return a.reduce((s,v,i)=>s+(v-aa)*(b[i]-bb),0)/((a.length-1)*csvStd(a)*csvStd(b));}
+function csvFit(rows,xi,yi){
+  const n=rows.length,k=xi.length,p=k+1;
+  if(n<=p+1)throw Error('A resposta '+csvMode.headers[yi]+' requer mais observações completas: n='+n+', coeficientes='+p+'.');
+  const mean=xi.map(j=>csvAverage(rows.map(r=>r[j]))),sd=xi.map(j=>csvStd(rows.map(r=>r[j])));
+  if(sd.some(x=>!Number.isFinite(x)||x<1e-12))throw Error('Existe um fator X constante ou quase constante. Retire-o do modelo.');
+  const X=rows.map(r=>[1,...xi.map((j,a)=>(r[j]-mean[a])/sd[a])]);
+  const Y=rows.map(r=>r[yi]);
+  const xtx=Array.from({length:p},()=>Array(p).fill(0)),xty=Array(p).fill(0);
+  for(let i=0;i<n;i++)for(let a=0;a<p;a++){xty[a]+=X[i][a]*Y[i];for(let b=0;b<p;b++)xtx[a][b]+=X[i][a]*X[i][b];}
+  const inv=invMatrix(xtx),coef=inv.map(v=>dot(v,xty)),yp=X.map(v=>dot(v,coef)),mu=csvAverage(Y);
+  const sse=Y.reduce((s,v,i)=>s+(v-yp[i])**2,0),sst=Y.reduce((s,v)=>s+(v-mu)**2,0),df=n-p;
+  const rmse=Math.sqrt(sse/df),r2=sst>0?1-sse/sst:NaN,adj=sst>0?1-(sse/df)/(sst/(n-1)):NaN;
+  let press=0,loo=true;
+  for(let i=0;i<n;i++){const h=dot(X[i],inv.map(v=>dot(v,X[i])));if(1-h<1e-8){loo=false;break;}press+=((Y[i]-yp[i])/(1-h))**2;}
+  const q2=loo&&sst>0?1-press/sst:NaN;
+  const coefs=coef.map((c,i)=>{const se=rmse*Math.sqrt(Math.max(0,inv[i][i]));const t=se>0?c/se:NaN;return {c,se,t,p:Number.isFinite(t)?tTail2(Math.abs(t),df):NaN};});
+  return {n,k,p,df,mean,sd,coef,coefs,Y,X,yp,inv,sse,sst,r2,adj,rmse,q2,xi,yi};
+}
+function csvAnalyze(){
+  const xi=csvMode.meta.map((m,i)=>m.role==='x'?i:-1).filter(i=>i>=0),yi=csvMode.meta.map((m,i)=>m.role==='y'?i:-1).filter(i=>i>=0);
+  if(!xi.length||!yi.length)throw Error('Escolha ao menos uma variável X e uma resposta Y.');
+  if(xi.length>30||yi.length>8)throw Error('Esta análise admite até 30 fatores X e 8 respostas Y.');
+  const models=[],warnings=[],data=csvMode.rows.map(row=>row.map(csvNumber));
+  for(const target of yi){
+    const complete=data.filter(row=>[...xi,target].every(i=>Number.isFinite(row[i])));
+    const m=csvFit(complete,xi,target);models.push(m);
+    if(complete.length<csvMode.rows.length)warnings.push(csvMode.headers[target]+': '+(csvMode.rows.length-complete.length)+' linhas incompletas excluídas da regressão.');
+    if(m.n<5*m.p)warnings.push(csvMode.headers[target]+': razão observações/parâmetros baixa ('+m.n+'/'+m.p+'). Risco elevado de sobreajuste.');
+    if(!Number.isFinite(m.q2)||m.q2<0.5)warnings.push(csvMode.headers[target]+': validação cruzada Q² insuficiente ou indisponível.');
+  }
+  const chosen=[...xi,...yi],completeAll=data.map((r,i)=>({r,i})).filter(o=>chosen.every(j=>Number.isFinite(o.r[j])));
+  for(let a=0;a<xi.length;a++)for(let b=a+1;b<xi.length;b++){
+    const rows=data.filter(r=>Number.isFinite(r[xi[a]])&&Number.isFinite(r[xi[b]]));
+    const corr=csvCorr(rows.map(r=>r[xi[a]]),rows.map(r=>r[xi[b]]));
+    if(Number.isFinite(corr)&&Math.abs(corr)>.9)warnings.push('Forte correlação entre fatores '+csvMode.headers[xi[a]]+' e '+csvMode.headers[xi[b]]+' (r='+fmt(corr,3)+'). Coeficientes podem ser instáveis.');
+  }
+  // Ranking of measured rows only; there is no invented optimal untested operating condition.
+  let winner=null;
+  if(completeAll.length){
+    const yranges=yi.map(j=>{const arr=completeAll.map(o=>o.r[j]);return [Math.min(...arr),Math.max(...arr)];});
+    for(const o of completeAll){const desir=yi.map((j,z)=>{const [lo,hi]=yranges[z];if(hi===lo)return .5;const t=(o.r[j]-lo)/(hi-lo);return csvMode.meta[j].goal==='min'?1-t:t;});const score=csvAverage(desir);
+      if(!winner||score>winner.score)winner={...o,score};}
+  }
+  csvMode.analysis={models,warnings,xi,yi,data,completeAll,winner};
+  csvRenderResults();
+}
+$('#csvAnalyze').onclick=()=>{try{csvAnalyze();}catch(e){$('#csvResults').innerHTML='<div class="warn">'+safe(e.message)+'</div>';}};
+function csvRenderResults(){
+  const {models,warnings,xi,yi,data,winner}=csvMode.analysis;
+  const info='<div class="info"><strong>Interpretação:</strong> regressão linear múltipla associativa, sem termos quadráticos ou interações. Q² usa leave-one-out; modelos não comprovam causalidade, adequação para extrapolação ou existência de ótimo industrial.</div>';
+  const description=csvMode.meta.map(m=>'<tr><td>'+safe(m.name)+'</td><td>'+safe(m.role.toUpperCase())+'</td><td>'+safe(m.desc||'Não informado')+'</td><td>'+safe(m.unit||'—')+'</td></tr>').join('');
+  let html='<h3 style="margin-top:18px">2. Resumo e dicionário</h3>'+info+
+    '<div class="kpis"><div class="kpi"><div class="value">'+csvMode.rows.length+'</div><div class="caption">Linhas importadas</div></div><div class="kpi"><div class="value">'+xi.length+'</div><div class="caption">Fatores X</div></div><div class="kpi"><div class="value">'+yi.length+'</div><div class="caption">Respostas Y</div></div><div class="kpi"><div class="value">'+models.map(m=>m.n).join(' / ')+'</div><div class="caption">Observações/modelo</div></div></div>';
+  if(warnings.length)html+='<div class="warn"><strong>Alertas:</strong><br>'+warnings.map(w=>safe(w)).join('<br>')+'</div>';
+  html+='<details><summary>Dicionário de variáveis e unidades</summary><div class="tablewrap"><table><tr><th>Coluna</th><th>Papel</th><th>Descrição</th><th>Unidade</th></tr>'+description+'</table></div></details>';
+  html+='<h3>3. Estatística descritiva</h3><div class="tablewrap"><table><thead><tr><th>Variável</th><th>n</th><th>Média</th><th>DP</th><th>Mín.</th><th>Máx.</th></tr></thead><tbody>';
+  for(const i of [...xi,...yi]){const arr=data.map(r=>r[i]).filter(Number.isFinite);html+='<tr><td>'+safe(csvMode.meta[i].name)+'</td><td>'+arr.length+'</td><td>'+fmt(csvAverage(arr),4)+'</td><td>'+fmt(csvStd(arr),4)+'</td><td>'+fmt(Math.min(...arr),4)+'</td><td>'+fmt(Math.max(...arr),4)+'</td></tr>';}html+='</tbody></table></div>';
+  html+='<h3>4. Correlações de Pearson (associação linear)</h3><div class="tablewrap"><table><thead><tr><th>Fator X</th>'+yi.map(j=>'<th>'+safe(csvMode.headers[j])+'</th>').join('')+'</tr></thead><tbody>';
+  for(const x of xi){html+='<tr><td>'+safe(csvMode.headers[x])+'</td>';for(const y of yi){const good=data.filter(r=>Number.isFinite(r[x])&&Number.isFinite(r[y]));html+='<td>'+fmt(csvCorr(good.map(r=>r[x]),good.map(r=>r[y])),3)+'</td>';}html+='</tr>';}html+='</tbody></table></div>';
+  html+='<h3>5. Regressão múltipla e diagnósticos</h3>';
+  for(const m of models){
+    const name=csvMode.headers[m.yi];
+    html+='<div class="result-card" style="margin-bottom:14px"><h3>'+safe(name)+'</h3><div class="metrics"><div class="metric"><span>R²</span><strong>'+fmt(m.r2,4)+'</strong></div><div class="metric"><span>R² ajustado</span><strong>'+fmt(m.adj,4)+'</strong></div><div class="metric"><span>Q² LOO</span><strong>'+fmt(m.q2,4)+'</strong></div></div><p class="meta">RMSE '+fmt(m.rmse,4)+' • n '+m.n+' • parâmetros '+m.p+' • graus de liberdade residuais '+m.df+'</p>';
+    html+='<div class="tablewrap"><table style="min-width:0"><thead><tr><th>Termo (X padronizado)</th><th>Coef.</th><th>Erro padrão</th><th>p aproximado</th></tr></thead><tbody>';
+    for(let i=0;i<m.coefs.length;i++)html+='<tr><td>'+safe(i===0?'Intercepto':csvMode.headers[m.xi[i-1]])+'</td><td>'+fmt(m.coefs[i].c,5)+'</td><td>'+fmt(m.coefs[i].se,5)+'</td><td>'+fmt(m.coefs[i].p,5)+'</td></tr>';
+    html+='</tbody></table></div><p class="meta">Os coeficientes X estão em unidades de desvio-padrão (padronização); não representam alteração por uma unidade física. Valores-p pressupõem erros independentes, aproximadamente normais e homocedásticos.</p>';
+    html+='<div class="grid2"><div><strong>Observado × previsto</strong>'+svgScatter(m.Y.map((v,i)=>[v,m.yp[i]]),'Observado','Previsto')+'</div><div><strong>Resíduo × previsto</strong>'+svgScatter(m.yp.map((v,i)=>[v,m.Y[i]-v]),'Previsto','Resíduo')+'</div></div></div>';
+  }
+  if(winner){
+    html+='<h3>6. Melhor linha observada (comparação exploratória)</h3><div class="info"><strong>Linha '+(winner.i+2)+' do CSV</strong> • pontuação normalizada '+fmt(winner.score,3)+' (0–1). Apenas comparação das condições já medidas; não é um ótimo predito.</div><div class="tablewrap"><table><tr><th>Variável</th><th>Valor observado</th></tr>'+[...xi,...yi].map(j=>'<tr><td>'+safe(csvMode.headers[j])+'</td><td>'+fmt(winner.r[j],5)+' '+safe(csvMode.meta[j].unit)+'</td></tr>').join('')+'</table></div>';
+  }else html+='<div class="warn">Sem linhas completas para comparação simultânea das respostas.</div>';
+  html+='<div class="warn">A análise de dados históricos é observacional. Correlação e regressão não demonstram efeito causal. Para otimização experimental, planeje um DOE com fatores controláveis e ensaios independentes. Não utilize estes resultados como recomendação de mudança no processo farmacêutico sem estudos confirmatórios e avaliação técnica.</div>';
+  $('#csvResults').innerHTML=html;$('#csvSummary').innerHTML='<div class="info">Análise concluída: '+models.length+' modelo(s) de regressão. Revise os alertas e a adequação dos pressupostos.</div>';
+}
+$('#csvSample').onclick=()=>{
+  const lines=['Temperatura_C;Tempo_h;Concentracao_gL;Rendimento_pct;Impureza_pct'];
+  for(let i=0;i<32;i++){const t=20+(i%8)*2,tm=1+(Math.floor(i/8))*.6,c=2+(i*7%13)*.3;const y=65+.38*t+2.1*tm-.8*c+((i*13)%7-3)*.4,imp=8-.04*t+.6*c-.2*tm+((i*5)%9-4)*.09;lines.push([t,tm.toFixed(2),c.toFixed(2),y.toFixed(3),imp.toFixed(3)].join(';'));}
+  csvRead(lines.join('\n'),'exemplo_didatico_ficticio.csv');
+  csvMode.meta.forEach((m,i)=>{m.desc=['Temperatura fictícia do ensaio','Tempo fictício','Concentração fictícia','Rendimento artificial','Impureza artificial'][i];m.unit=['°C','h','g/L','%','%'][i];m.role=i<3?'x':'y';if(i===4)m.goal='min';});
+  csvRenderConfig();csvAnalyze();
+};
+$('#csvTemplate').onclick=()=>download('modelo_importacao_labdoe.csv','Lote;Temperatura_C;Tempo_h;Resposta_Y1\nL001;25;2;75\nL002;30;3;78\nL003;35;4;81\nL004;40;5;84','text/csv;charset=utf-8');
+$('#csvDictionary').onclick=()=>{
+  if(!csvMode.meta.length)return alert('Importe um CSV primeiro.');
+  const fields=['Coluna','Papel','Descricao','Unidade','Objetivo'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const body=[fields,...csvMode.meta.map(m=>[m.name,m.role,m.desc,m.unit,m.role==='y'?m.goal:''])].map(r=>r.map(q).join(';')).join('\n');
+  download('dicionario_labdoe.csv',body,'text/csv;charset=utf-8');
+};
+$('#csvExportReport').onclick=()=>{
+  if(!csvMode.analysis)return alert('Calcule a análise estatística antes de exportar.');
+  const content='<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Relatório LabDOE CSV</title><style>body{font:13px Arial;margin:25px auto;max-width:1050px;line-height:1.55;color:#152d3b}table{width:100%;border-collapse:collapse}td,th{border:1px solid #cddadd;padding:7px}h2{color:#166c68}.result-card{margin:15px 0;padding:10px;border:1px solid #d7e2e5}.metrics,.grid2,.kpis{display:flex;gap:15px}.metric,.kpi{padding:10px}.meta{color:#557}.warn{background:#fff1da;padding:10px}.info{background:#eaf6f1;padding:10px}svg{max-width:450px}</style><body><h1>LabDOE — Análise estatística de CSV</h1><p>Arquivo: '+safe(csvMode.fileName)+' • '+new Date().toLocaleString('pt-BR')+'</p>'+$('#csvResults').innerHTML+'</body></html>';
+  download('relatorio_labdoe_csv.html',content,'text/html;charset=utf-8');
+};
 
 </script>
 </body></html>
